@@ -15,10 +15,18 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (cfg: ConfigService) => ({
-        secret: cfg.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: cfg.get<number>('JWT_EXPIRES_IN') ?? 3600 }, // <-
-      }),
+      useFactory: (cfg: ConfigService) => {
+        // expiresIn puede ser número (segundos) o string ('3600s', '1h', etc)
+        const expiresInEnv = cfg.get<string | number>('JWT_EXPIRES_IN');
+        const expiresIn = expiresInEnv 
+          ? (typeof expiresInEnv === 'number' ? `${expiresInEnv}s` : expiresInEnv.toString())
+          : '3600s'; // 1 hora por defecto
+        
+        return {
+          secret: cfg.get<string>('JWT_SECRET') || 'default-secret-key-change-in-production',
+          signOptions: { expiresIn },
+        };
+      },
     }),
   ],
   controllers: [AuthController],
