@@ -6,6 +6,7 @@ import { UsersModule } from './users/users.module';
 import { VehiculosModule } from './vehiculos/vehiculos.module';
 import { TurnosModule } from './turnos/turnos.module';
 import { ChecklistTemplatesModule } from './checklist-templates/checklist-templates.module';
+import { InspeccionesModule } from './inspecciones/inspecciones.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { ChecklistTemplatesModule } from './checklist-templates/checklist-templa
     VehiculosModule,
     TurnosModule,
     ChecklistTemplatesModule,
+    InspeccionesModule,
   ],
 })
 export class AppModule {}
