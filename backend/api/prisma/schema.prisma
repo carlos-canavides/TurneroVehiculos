@@ -93,6 +93,7 @@ model UserRole {
 model Vehicle {
   id      String @id @default(uuid()) @db.Uuid
   plate   String @unique
+  alias      String?
   ownerId String @db.Uuid
   owner   User   @relation(fields: [ownerId], references: [id])
 

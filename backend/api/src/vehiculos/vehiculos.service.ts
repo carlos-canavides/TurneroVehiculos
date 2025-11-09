@@ -1,4 +1,48 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
-export class VehiculosService {}
+export class VehiculosService {
+  constructor(private prisma: PrismaService) {}
+
+  async crear(patente: string, ownerId: string, alias?: string) {
+    const plate = patente.toUpperCase();
+
+    const existe = await this.prisma.vehicle.findUnique({
+      where: { plate },
+    });
+    if (existe) {
+      throw new ConflictException('La patente ya está registrada');
+    }
+
+    return this.prisma.vehicle.create({
+      data: {
+        plate,
+        alias,
+        owner: { connect: { id: ownerId } },
+      },
+      include: { owner: true },
+    });
+  }
+
+  async misVehiculos(ownerId: string) {
+    return this.prisma.vehicle.findMany({
+      where: { ownerId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async obtenerPropio(id: string, ownerId: string) {
+    const v = await this.prisma.vehicle.findFirst({
+      where: { id, ownerId },
+    });
+    if (!v) throw new NotFoundException('Vehículo no encontrado');
+    return v;
+  }
+
+  async eliminarPropio(id: string, ownerId: string) {
+    const v = await this.obtenerPropio(id, ownerId);
+    await this.prisma.vehicle.delete({ where: { id: v.id } });
+    return { ok: true };
+  }
+}
