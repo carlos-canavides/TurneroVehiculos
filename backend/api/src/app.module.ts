@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { VehiculosModule } from './vehiculos/vehiculos.module';
 import { TurnosModule } from './turnos/turnos.module';
+import { ChecklistTemplatesModule } from './checklist-templates/checklist-templates.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { TurnosModule } from './turnos/turnos.module';
     AuthModule,
     VehiculosModule,
     TurnosModule,
+    ChecklistTemplatesModule,
   ],
 })
 export class AppModule {}
