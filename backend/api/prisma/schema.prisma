@@ -153,6 +153,7 @@ model Appointment {
   templateId  String           @db.Uuid
   dateTime    DateTime
   state       AppointmentState @default(PENDING)
+  cancelReason String?
 
   vehicle   Vehicle @relation(fields: [vehicleId], references: [id])
   requester User    @relation("RequestedAppointments", fields: [requesterId], references: [id])

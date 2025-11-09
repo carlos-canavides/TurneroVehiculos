@@ -1,7 +1,8 @@
 import { Body, Controller, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TurnosService } from './turnos.service';
 import { CreateTurnoDto } from './dto/create-turno.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CancelarTurnoDto } from './dto/cancelar-turno.dto';
 
 @Controller('turnos')
 @UseGuards(JwtAuthGuard)
@@ -10,16 +11,22 @@ export class TurnosController {
 
   @Post()
   create(@Req() req: any, @Body() dto: CreateTurnoDto) {
-    return this.service.create(req.user.userId, dto);
+    return this.service.crear(req.user.userId, dto);
   }
 
-  @Get()
+  @Get('mios')
   mine(@Req() req: any) {
-    return this.service.mine(req.user.userId);
+    return this.service.misTurnos(req.user.userId);
+  }
+
+  @Patch(':id/confirmar')
+  confirmar(@Param('id') id: string) {
+    return this.service.confirmar(id);
   }
 
   @Patch(':id/cancelar')
-  cancel(@Req() req: any, @Param('id') id: string) {
-    return this.service.cancel(req.user.userId, id);
+  cancelar(@Req() req: any, @Param('id') id: string, @Body() dto: CancelarTurnoDto) {
+    return this.service.cancelar(req.user.userId, id, dto.motivo);
   }
+
 }

@@ -6,7 +6,7 @@ import { CreateTurnoDto } from './dto/create-turno.dto';
 export class TurnosService {
   constructor(private prisma: PrismaService) {}
 
-  async create(userId: string, dto: CreateTurnoDto) {
+  async crear(userId: string, dto: CreateTurnoDto) {
     // 1) Validar que el vehículo sea del usuario
     const vehicle = await this.prisma.vehicle.findFirst({
       where: { id: dto.vehicleId, ownerId: userId },
@@ -26,39 +26,55 @@ export class TurnosService {
     });
     if (!template) throw new BadRequestException('No hay checklist activo');
 
-    // Nota: ajusta el nombre del campo de fecha según tu schema:
-    // si tu columna es "fechaHora" o "dateTime", reemplaza scheduledAt: when por el nombre correcto.
     return this.prisma.appointment.create({
       data: {
         vehicleId: dto.vehicleId,
         requesterId: userId,
-        dateTime: when,            // <- cambia la clave si en Prisma se llama distinto (ej: dateTime)
+        dateTime: when,
         templateId: template.id,
-        // status lo dejamos al default del schema
       },
       include: { vehicle: true },
     });
-    // Si tu enum de estado no tiene default, usa:
-    // status: 'PENDING' as any
   }
 
-  async mine(userId: string) {
+  async misTurnos(userId: string) {
     return this.prisma.appointment.findMany({
       where: { requesterId: userId },
-      orderBy: { dateTime: 'desc' }, // ajusta al nombre real del campo de fecha
+      orderBy: { dateTime: 'desc' },
       include: { vehicle: true },
     });
   }
 
-  async cancel(userId: string, id: string) {
+  async confirmar(id: string) {
+    const appt = await this.prisma.appointment.findUnique({
+      where: { id },
+    });
+    if (!appt) throw new NotFoundException('Turno no encontrado');
+    if (appt.state !== 'PENDING') {
+      throw new BadRequestException('Solo se pueden confirmar turnos pendientes');
+    }
+
+    return this.prisma.appointment.update({
+      where: { id },
+      data: { state: 'CONFIRMED' },
+    });
+  }
+
+  async cancelar(userId: string, id: string, motivo?: string) {
     const appt = await this.prisma.appointment.findFirst({
       where: { id, requesterId: userId },
     });
     if (!appt) throw new NotFoundException('Turno no encontrado');
+    if (appt.state === 'CANCELLED') {
+      throw new BadRequestException('El turno ya está cancelado');
+    }
 
     return this.prisma.appointment.update({
       where: { id },
-      data: { state: 'CANCELLED' as any },
+      data: {
+        state: 'CANCELLED',
+        cancelReason: motivo ?? null,
+      },
     });
   }
 }
