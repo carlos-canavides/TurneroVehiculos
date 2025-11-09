@@ -1,0 +1,211 @@
+// Prisma Client (JS) por defecto
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Conexión a PostgreSQL (lee DATABASE_URL del .env)
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/**
+ * ===== Enums de dominio =====
+ */
+
+// Roles de usuario
+enum RoleName {
+  OWNER // Dueño del vehículo
+  INSPECTOR // Inspector que carga puntajes
+  ADMIN
+}
+
+// Estados del turno
+enum AppointmentState {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+// Resultado final de la inspección
+enum InspectionResult {
+  SAFE
+  RECHECK
+}
+
+/**
+ * ===== Usuarios, Roles y relación N:M =====
+ */
+
+// Usuario del sistema (dueño, inspector, admin)
+model User {
+  id       String  @id @default(uuid()) @db.Uuid
+  name     String
+  email    String  @unique
+  password String
+  active   Boolean @default(true)
+
+  // Relación 1:N con Vehicle (dueño)
+  vehicles Vehicle[]
+
+  // Turnos solicitados por el usuario (si actúa como dueño)
+  requested Appointment[] @relation("RequestedAppointments")
+
+  // Turnos asignados para inspección (si actúa como inspector)
+  inspected Appointment[] @relation("AssignedInspections")
+
+  // Inspecciones efectuadas (para trazabilidad)
+  inspections Inspection[]
+
+  // Roles (N:M)
+  roles UserRole[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Catálogo de roles
+model Role {
+  id    String     @id @default(uuid()) @db.Uuid
+  name  RoleName   @unique
+  users UserRole[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Tabla puente N:M entre User y Role
+model UserRole {
+  userId String @db.Uuid
+  roleId String @db.Uuid
+
+  user User @relation(fields: [userId], references: [id])
+  role Role @relation(fields: [roleId], references: [id])
+
+  @@id([userId, roleId])
+}
+
+/**
+ * ===== Vehículos =====
+ */
+
+// Vehículo identificado por patente, pertenece a un OWNER
+model Vehicle {
+  id      String @id @default(uuid()) @db.Uuid
+  plate   String @unique
+  ownerId String @db.Uuid
+  owner   User   @relation(fields: [ownerId], references: [id])
+
+  // Turnos del vehículo
+  appointments Appointment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/**
+ * ===== Checklist (plantilla e ítems) =====
+ */
+
+// Plantilla de checklist (contiene 8 ítems)
+model ChecklistTemplate {
+  id     String  @id @default(uuid()) @db.Uuid
+  name   String
+  active Boolean @default(true)
+
+  // Ítems definidos en la plantilla
+  items ChecklistItemDefinition[]
+
+  // Back-relation con turnos que usaron esta plantilla
+  appointments Appointment[] @relation("TemplateAppointments")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Ítem definido en la plantilla (p. ej., frenos, luces, etc.)
+model ChecklistItemDefinition {
+  id         String @id @default(uuid()) @db.Uuid
+  templateId String @db.Uuid
+  label      String
+  ord        Int // posición en la plantilla (1..8)
+
+  template ChecklistTemplate @relation(fields: [templateId], references: [id])
+
+  // Puntuaciones cargadas para este ítem en distintas inspecciones
+  scores InspectionItemScore[] @relation("DefinitionScores")
+
+  // Evita duplicar el mismo orden dentro de la misma plantilla
+  @@unique([templateId, ord])
+}
+
+/**
+ * ===== Turnos (Appointments) =====
+ */
+
+// Turno para inspección de un vehículo, con plantilla asociada
+model Appointment {
+  id          String           @id @default(uuid()) @db.Uuid
+  vehicleId   String           @db.Uuid
+  requesterId String           @db.Uuid // quién solicitó (OWNER)
+  inspectorId String?          @db.Uuid // quién inspeccionará (INSPECTOR)
+  templateId  String           @db.Uuid
+  dateTime    DateTime
+  state       AppointmentState @default(PENDING)
+
+  vehicle   Vehicle @relation(fields: [vehicleId], references: [id])
+  requester User    @relation("RequestedAppointments", fields: [requesterId], references: [id])
+  inspector User?   @relation("AssignedInspections", fields: [inspectorId], references: [id])
+
+  // Relación nombrada con ChecklistTemplate (y su back-relation)
+  template ChecklistTemplate @relation("TemplateAppointments", fields: [templateId], references: [id])
+
+  // Una inspección por turno (1:1)
+  inspection Inspection?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([vehicleId, dateTime])
+  @@index([state])
+}
+
+/**
+ * ===== Inspecciones y puntajes =====
+ */
+
+// Inspección realizada sobre un turno confirmado
+model Inspection {
+  id            String           @id @default(uuid()) @db.Uuid
+  appointmentId String           @unique @db.Uuid // garantiza 1:1 con Appointment
+  inspectorId   String           @db.Uuid
+  total         Int // suma de los 8 ítems
+  result        InspectionResult // SAFE / RECHECK (según reglas)
+  note          String?
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+  inspector   User        @relation(fields: [inspectorId], references: [id])
+
+  // Puntuaciones por ítem
+  scores InspectionItemScore[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Puntuación de un ítem de checklist en una inspección
+model InspectionItemScore {
+  id           String  @id @default(uuid()) @db.Uuid
+  inspectionId String  @db.Uuid
+  itemId       String  @db.Uuid
+  value        Int // 1..10 (se valida en capa servicio)
+  note         String?
+
+  inspection Inspection @relation(fields: [inspectionId], references: [id])
+
+  // Relación nombrada con definición de ítem (y su back-relation)
+  item ChecklistItemDefinition @relation("DefinitionScores", fields: [itemId], references: [id])
+
+  // Evita duplicar el mismo ítem dentro de la misma inspección
+  @@unique([inspectionId, itemId])
+}
