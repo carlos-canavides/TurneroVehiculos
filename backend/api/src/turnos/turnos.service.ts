@@ -77,4 +77,62 @@ export class TurnosService {
       },
     });
   }
+
+  async disponibilidad(fechaInicio?: string, fechaFin?: string) {
+    // Generar horarios disponibles para los próximos 30 días
+    const hoy = new Date();
+    const fechaFinDefault = new Date();
+    fechaFinDefault.setDate(fechaFinDefault.getDate() + 30);
+
+    const inicio = fechaInicio ? new Date(fechaInicio) : hoy;
+    const fin = fechaFin ? new Date(fechaFin) : fechaFinDefault;
+
+    // Obtener turnos ya ocupados (CONFIRMED o PENDING)
+    const turnosOcupados = await this.prisma.appointment.findMany({
+      where: {
+        dateTime: {
+          gte: inicio,
+          lte: fin,
+        },
+        state: {
+          in: ['PENDING', 'CONFIRMED'],
+        },
+      },
+      select: {
+        dateTime: true,
+      },
+    });
+
+    // Generar horarios disponibles (cada hora, de 9:00 a 17:00, lunes a viernes)
+    const horariosDisponibles: Date[] = [];
+    const fechaActual = new Date(inicio);
+
+    while (fechaActual <= fin) {
+      const diaSemana = fechaActual.getDay(); // 0 = domingo, 6 = sábado
+      
+      // Solo lunes a viernes (1-5)
+      if (diaSemana >= 1 && diaSemana <= 5) {
+        for (let hora = 9; hora <= 17; hora++) {
+          const horario = new Date(fechaActual);
+          horario.setHours(hora, 0, 0, 0);
+          
+          // Verificar que no esté ocupado
+          const estaOcupado = turnosOcupados.some(
+            (turno) => turno.dateTime.getTime() === horario.getTime(),
+          );
+          
+          if (!estaOcupado && horario >= hoy) {
+            horariosDisponibles.push(horario);
+          }
+        }
+      }
+      
+      fechaActual.setDate(fechaActual.getDate() + 1);
+    }
+
+    return {
+      horariosDisponibles: horariosDisponibles.map((h) => h.toISOString()),
+      total: horariosDisponibles.length,
+    };
+  }
 }

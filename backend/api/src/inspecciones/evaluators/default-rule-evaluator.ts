@@ -11,8 +11,8 @@ export class DefaultRuleEvaluator implements IRuleEvaluator {
       return InspectionResult.RECHECK;
     }
 
-    // Regla 2: Si el total es mayor a 80 → SAFE
-    if (inspeccion.total > 80) {
+    // Regla 2: Si el total es mayor o igual a 80 → SAFE
+    if (inspeccion.total >= 80) {
       return InspectionResult.SAFE;
     }
 

@@ -43,4 +43,11 @@ export class TurnosController {
     return this.service.cancelar(req.user.userId, id, dto.motivo);
   }
 
+  @ApiOperation({ summary: 'Consultar disponibilidad de turnos' })
+  @ApiResponse({ status: 200, description: 'Lista de horarios disponibles' })
+  @Get('disponibilidad')
+  disponibilidad(@Req() req: any) {
+    return this.service.disponibilidad();
+  }
+
 }
