@@ -20,7 +20,8 @@ export class AuthService {
     if (!user) throw new UnauthorizedException('Credenciales Invalidas');
     const roles: string[] = (user.roles ?? []).map((ur: any) => String(ur.role.name));
     const payload = { sub: user.id, email: user.email, roles };
-    return { access_token: this.jwt.sign(payload) };
+    const token = this.jwt.sign(payload);
+    return { access_token: token };
   }
 
 }

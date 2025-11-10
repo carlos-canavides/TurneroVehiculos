@@ -35,18 +35,6 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document, {
     swaggerOptions: {
       persistAuthorization: true, // Mantiene el token al recargar la página
-      authAction: {
-        'JWT-auth': {
-          name: 'JWT-auth',
-          schema: {
-            type: 'http',
-            scheme: 'bearer',
-            bearerFormat: 'JWT',
-            description: 'Ingresa el token JWT obtenido del endpoint /auth/login',
-          },
-          value: 'Bearer ',
-        },
-      },
     },
     customSiteTitle: 'API - Sistema de Turnos e Inspecciones',
   });
