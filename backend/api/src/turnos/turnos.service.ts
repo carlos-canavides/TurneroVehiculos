@@ -78,6 +78,87 @@ export class TurnosService {
     });
   }
 
+  async todosLosTurnos() {
+    return this.prisma.appointment.findMany({
+      include: {
+        vehicle: {
+          select: {
+            id: true,
+            plate: true,
+            alias: true,
+            owner: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
+        requester: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        inspector: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        inspection: {
+          select: {
+            id: true,
+            total: true,
+            result: true,
+          },
+        },
+      },
+      orderBy: {
+        dateTime: 'desc',
+      },
+    });
+  }
+
+  async turnosConfirmadosDisponibles() {
+    // Obtener turnos confirmados que no tienen inspección
+    return this.prisma.appointment.findMany({
+      where: {
+        state: 'CONFIRMED',
+        inspection: null, // No tiene inspección aún
+      },
+      include: {
+        vehicle: {
+          select: {
+            id: true,
+            plate: true,
+            alias: true,
+          },
+        },
+        requester: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        template: {
+          include: {
+            items: {
+              orderBy: { ord: 'asc' },
+            },
+          },
+        },
+      },
+      orderBy: {
+        dateTime: 'asc',
+      },
+    });
+  }
+
   async disponibilidad(fechaInicio?: string, fechaFin?: string) {
     // Generar horarios disponibles para los próximos 30 días
     const hoy = new Date();

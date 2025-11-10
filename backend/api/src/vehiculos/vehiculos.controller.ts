@@ -53,4 +53,11 @@ export class VehiculosController {
   async eliminar(@Param('id') id: string, @Req() req: any) {
     return this.vehiculos.eliminarPropio(id, req.user.userId);
   }
+
+  @ApiOperation({ summary: 'Obtener todos los vehículos (solo ADMIN)' })
+  @ApiResponse({ status: 200, description: 'Lista de todos los vehículos' })
+  @Get('todos')
+  async todos() {
+    return this.vehiculos.todosLosVehiculos();
+  }
 }

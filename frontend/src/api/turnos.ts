@@ -39,5 +39,15 @@ export const turnosApi = {
     const response = await apiClient.patch<Appointment>(`/turnos/${id}/confirmar`);
     return response.data;
   },
+
+  getConfirmedAvailable: async (): Promise<Appointment[]> => {
+    const response = await apiClient.get<Appointment[]>('/turnos/confirmados-disponibles');
+    return response.data;
+  },
+
+  getAllAppointments: async (): Promise<Appointment[]> => {
+    const response = await apiClient.get<Appointment[]>('/turnos/todos');
+    return response.data;
+  },
 };
 

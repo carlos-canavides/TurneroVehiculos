@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { vehiculosApi } from '../api/vehiculos';
 import { turnosApi } from '../api/turnos';
+import { inspeccionesApi } from '../api/inspecciones';
 import './OwnerDashboard.css';
 
 interface Vehicle {
@@ -15,6 +16,12 @@ interface Appointment {
   dateTime: string;
   state: string;
   vehicle: Vehicle;
+  inspection?: {
+    id: string;
+    total: number;
+    result: string;
+    note?: string;
+  };
 }
 
 export default function OwnerDashboard() {
@@ -23,8 +30,12 @@ export default function OwnerDashboard() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewVehicle, setShowNewVehicle] = useState(false);
+  const [showNewAppointment, setShowNewAppointment] = useState(false);
   const [newPlate, setNewPlate] = useState('');
   const [newAlias, setNewAlias] = useState('');
+  const [selectedVehicle, setSelectedVehicle] = useState('');
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState('');
 
   useEffect(() => {
     loadData();
@@ -39,6 +50,22 @@ export default function OwnerDashboard() {
       ]);
       setVehicles(vehiclesData);
       setAppointments(appointmentsData);
+      
+      // Cargar inspecciones para cada turno
+      const appointmentsWithInspections = await Promise.all(
+        appointmentsData.map(async (appt) => {
+          if (appt.state === 'CONFIRMED') {
+            try {
+              const inspection = await inspeccionesApi.getInspectionByAppointment(appt.id);
+              return { ...appt, inspection };
+            } catch {
+              return appt;
+            }
+          }
+          return appt;
+        })
+      );
+      setAppointments(appointmentsWithInspections);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -56,6 +83,44 @@ export default function OwnerDashboard() {
       loadData();
     } catch (error: any) {
       alert(error.response?.data?.message || 'Error al crear vehículo');
+    }
+  };
+
+  const handleLoadAvailability = async () => {
+    try {
+      const availability = await turnosApi.getAvailability();
+      setAvailableSlots(availability.horariosDisponibles);
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Error al cargar disponibilidad');
+    }
+  };
+
+  const handleCreateAppointment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedVehicle || !selectedSlot) {
+      alert('Debes seleccionar un vehículo y un horario');
+      return;
+    }
+    try {
+      await turnosApi.createAppointment(selectedVehicle, selectedSlot);
+      setSelectedVehicle('');
+      setSelectedSlot('');
+      setShowNewAppointment(false);
+      setAvailableSlots([]);
+      loadData();
+      alert('Turno solicitado exitosamente. Debes confirmarlo.');
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Error al crear turno');
+    }
+  };
+
+  const handleConfirmAppointment = async (id: string) => {
+    try {
+      await turnosApi.confirmAppointment(id);
+      loadData();
+      alert('Turno confirmado exitosamente');
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Error al confirmar turno');
     }
   };
 
@@ -116,7 +181,60 @@ export default function OwnerDashboard() {
         </section>
 
         <section className="appointments-section">
-          <h2>Mis Turnos</h2>
+          <div className="section-header">
+            <h2>Mis Turnos</h2>
+            <button onClick={() => {
+              setShowNewAppointment(!showNewAppointment);
+              if (!showNewAppointment) {
+                handleLoadAvailability();
+              }
+            }}>
+              {showNewAppointment ? 'Cancelar' : '+ Solicitar Turno'}
+            </button>
+          </div>
+
+          {showNewAppointment && (
+            <form onSubmit={handleCreateAppointment} className="new-appointment-form">
+              <div className="form-group">
+                <label>Seleccionar Vehículo:</label>
+                <select
+                  value={selectedVehicle}
+                  onChange={(e) => setSelectedVehicle(e.target.value)}
+                  required
+                >
+                  <option value="">-- Selecciona un vehículo --</option>
+                  {vehicles.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.plate} {v.alias && `(${v.alias})`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {availableSlots.length > 0 && (
+                <div className="form-group">
+                  <label>Horarios Disponibles:</label>
+                  <select
+                    value={selectedSlot}
+                    onChange={(e) => setSelectedSlot(e.target.value)}
+                    required
+                  >
+                    <option value="">-- Selecciona un horario --</option>
+                    {availableSlots.map((slot) => (
+                      <option key={slot} value={slot}>
+                        {new Date(slot).toLocaleString('es-AR')}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <button type="submit" disabled={!selectedVehicle || !selectedSlot}>
+                Solicitar Turno
+              </button>
+            </form>
+          )}
+
           <div className="appointments-list">
             {appointments.length === 0 ? (
               <p>No tienes turnos registrados</p>
@@ -124,11 +242,33 @@ export default function OwnerDashboard() {
               appointments.map((appt) => (
                 <div key={appt.id} className="appointment-card">
                   <div className="appointment-info">
-                    <h3>{appt.vehicle.plate}</h3>
-                    <p>{new Date(appt.dateTime).toLocaleString('es-AR')}</p>
+                    <h3>Vehículo: {appt.vehicle.plate}</h3>
+                    <p>Fecha: {new Date(appt.dateTime).toLocaleString('es-AR')}</p>
                     <span className={`state state-${appt.state.toLowerCase()}`}>
                       {appt.state}
                     </span>
+                    
+                    {appt.state === 'PENDING' && (
+                      <button
+                        className="confirm-btn"
+                        onClick={() => handleConfirmAppointment(appt.id)}
+                      >
+                        Confirmar Turno
+                      </button>
+                    )}
+
+                    {appt.inspection && (
+                      <div className="inspection-result">
+                        <h4>Resultado de Inspección:</h4>
+                        <p>Total: {appt.inspection.total} puntos</p>
+                        <p className={`result result-${appt.inspection.result.toLowerCase()}`}>
+                          {appt.inspection.result === 'SAFE' ? '✅ Seguro' : '⚠️ Rechequear'}
+                        </p>
+                        {appt.inspection.note && (
+                          <p className="inspection-note">Observación: {appt.inspection.note}</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))
@@ -139,4 +279,3 @@ export default function OwnerDashboard() {
     </div>
   );
 }
-

@@ -18,7 +18,7 @@ export class InspeccionesService {
   ) {}
 
   async crear(inspectorId: string, dto: CrearInspeccionDto) {
-    // 1) Validar que el turno existe y está confirmado
+    // Validar que el turno existe y esta confirmado
     const turno = await this.prisma.appointment.findUnique({
       where: { id: dto.turnoId },
       include: {
@@ -34,31 +34,28 @@ export class InspeccionesService {
     }
 
     if (turno.state !== 'CONFIRMED') {
-      throw new BadRequestException('El turno debe estar confirmado para crear una inspección');
+      throw new BadRequestException('El turno debe estar confirmado para crear una inspeccion');
     }
 
-    // 2) Validar que no exista ya una inspección para este turno
+    // Validar que no exista ya una inspeccion para este turno
     if (turno.inspection) {
       throw new BadRequestException('Ya existe una inspección para este turno');
     }
 
-    // 3) Validar que el inspector tenga el rol INSPECTOR
-    // (esto se puede validar en el controller con el guard de roles)
-
-    // 4) Validar que el turno tenga una plantilla con 8 ítems
+    // Validar que el turno tenga una plantilla con 8 items
     if (!turno.template || turno.template.items.length !== 8) {
       throw new BadRequestException(
-        'El turno debe tener una plantilla activa con 8 ítems para crear una inspección',
+        'El turno debe tener una plantilla activa con 8 ítems para crear una inspeccion',
       );
     }
 
-    // 5) Crear la inspección (sin puntajes aún, total = 0, resultado pendiente)
+    // Crear la inspección (sin puntajes, total = 0, resultado pendiente)
     const inspeccion = await this.prisma.inspection.create({
       data: {
         appointmentId: dto.turnoId,
         inspectorId,
         total: 0,
-        result: 'SAFE', // Temporal, se actualizará al finalizar
+        result: 'SAFE',
       },
       include: {
         appointment: {
@@ -68,7 +65,7 @@ export class InspeccionesService {
             },
           },
         },
-        scores: true,
+        scores: true
       },
     });
 
@@ -80,7 +77,7 @@ export class InspeccionesService {
     inspeccionId: string,
     dto: AgregarPuntajeDto,
   ) {
-    // 1) Validar que la inspección existe y pertenece al inspector
+    // Validar que la inspeccion existe y pertenece al inspector
     const inspeccion = await this.prisma.inspection.findUnique({
       where: { id: inspeccionId },
       include: {
@@ -91,7 +88,7 @@ export class InspeccionesService {
             },
           },
         },
-        scores: true,
+        scores: true
       },
     });
 
@@ -100,10 +97,10 @@ export class InspeccionesService {
     }
 
     if (inspeccion.inspectorId !== inspectorId) {
-      throw new ForbiddenException('No tienes permisos para modificar esta inspección');
+      throw new ForbiddenException('No tienes permisos para modificar esta inspeccion');
     }
 
-    // 2) Validar que el ítem pertenece a la plantilla del turno
+    // Validar que el item pertenece a la plantilla del turno
     const itemExiste = inspeccion.appointment.template.items.some(
       (item) => item.id === dto.itemId,
     );
@@ -293,6 +290,47 @@ export class InspeccionesService {
     });
   }
 
+  async todasLasInspecciones() {
+    return this.prisma.inspection.findMany({
+      include: {
+        appointment: {
+          include: {
+            vehicle: {
+              include: {
+                owner: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                  },
+                },
+              },
+            },
+            requester: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
+        scores: {
+          include: { item: true },
+          orderBy: { item: { ord: 'asc' } },
+        },
+        inspector: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async listarPorTurno(turnoId: string) {
     const turno = await this.prisma.appointment.findUnique({
       where: { id: turnoId },
@@ -318,4 +356,3 @@ export class InspeccionesService {
     return turno.inspection;
   }
 }
-

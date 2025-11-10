@@ -50,4 +50,18 @@ export class TurnosController {
     return this.service.disponibilidad();
   }
 
+  @ApiOperation({ summary: 'Obtener turnos confirmados disponibles para inspección' })
+  @ApiResponse({ status: 200, description: 'Lista de turnos confirmados sin inspección' })
+  @Get('confirmados-disponibles')
+  turnosConfirmadosDisponibles() {
+    return this.service.turnosConfirmadosDisponibles();
+  }
+
+  @ApiOperation({ summary: 'Obtener todos los turnos (solo ADMIN)' })
+  @ApiResponse({ status: 200, description: 'Lista de todos los turnos' })
+  @Get('todos')
+  todosLosTurnos() {
+    return this.service.todosLosTurnos();
+  }
+
 }

@@ -19,5 +19,10 @@ export const vehiculosApi = {
     });
     return response.data;
   },
+
+  getAllVehicles: async (): Promise<Vehicle[]> => {
+    const response = await apiClient.get<Vehicle[]>('/vehiculos/todos');
+    return response.data;
+  },
 };
 

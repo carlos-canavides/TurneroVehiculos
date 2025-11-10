@@ -45,4 +45,19 @@ export class VehiculosService {
     await this.prisma.vehicle.delete({ where: { id: v.id } });
     return { ok: true };
   }
+
+  async todosLosVehiculos() {
+    return this.prisma.vehicle.findMany({
+      include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }

@@ -82,5 +82,12 @@ export class InspeccionesController {
   obtenerPorTurno(@Param('turnoId') turnoId: string) {
     return this.service.listarPorTurno(turnoId);
   }
+
+  @ApiOperation({ summary: 'Obtener todas las inspecciones (solo ADMIN)' })
+  @ApiResponse({ status: 200, description: 'Lista de todas las inspecciones' })
+  @Get('todas')
+  todasLasInspecciones() {
+    return this.service.todasLasInspecciones();
+  }
 }
 
