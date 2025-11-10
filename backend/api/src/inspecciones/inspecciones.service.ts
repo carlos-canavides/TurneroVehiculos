@@ -39,17 +39,17 @@ export class InspeccionesService {
 
     // Validar que no exista ya una inspeccion para este turno
     if (turno.inspection) {
-      throw new BadRequestException('Ya existe una inspección para este turno');
+      throw new BadRequestException('Ya existe una inspeccion para este turno');
     }
 
     // Validar que el turno tenga una plantilla con 8 items
     if (!turno.template || turno.template.items.length !== 8) {
       throw new BadRequestException(
-        'El turno debe tener una plantilla activa con 8 ítems para crear una inspeccion',
+        'El turno debe tener una plantilla activa con 8 items para crear una inspeccion',
       );
     }
 
-    // Crear la inspección (sin puntajes, total = 0, resultado pendiente)
+    // Crear la inspeccion (sin puntajes, total = 0, resultado pendiente)
     const inspeccion = await this.prisma.inspection.create({
       data: {
         appointmentId: dto.turnoId,
@@ -93,7 +93,7 @@ export class InspeccionesService {
     });
 
     if (!inspeccion) {
-      throw new NotFoundException('Inspección no encontrada');
+      throw new NotFoundException('Inspeccion no encontrada');
     }
 
     if (inspeccion.inspectorId !== inspectorId) {
@@ -105,10 +105,10 @@ export class InspeccionesService {
       (item) => item.id === dto.itemId,
     );
     if (!itemExiste) {
-      throw new NotFoundException('El ítem no pertenece a la plantilla de este turno');
+      throw new NotFoundException('El item no pertenece a la plantilla de este turno');
     }
 
-    // 3) Verificar si ya existe un puntaje para este ítem (actualizar o crear)
+    // 3) Verificar si ya existe un puntaje para este item (actualizar o crear)
     const puntajeExistente = inspeccion.scores.find((score) => score.itemId === dto.itemId);
 
     if (puntajeExistente) {
@@ -168,7 +168,7 @@ export class InspeccionesService {
     inspeccionId: string,
     dto: FinalizarInspeccionDto,
   ) {
-    // 1) Validar que la inspección existe y pertenece al inspector
+    // 1) Validar que la inspeccion existe y pertenece al inspector
     const inspeccion = await this.prisma.inspection.findUnique({
       where: { id: inspeccionId },
       include: {
@@ -186,17 +186,17 @@ export class InspeccionesService {
     });
 
     if (!inspeccion) {
-      throw new NotFoundException('Inspección no encontrada');
+      throw new NotFoundException('Inspeccion no encontrada');
     }
 
     if (inspeccion.inspectorId !== inspectorId) {
-      throw new ForbiddenException('No tienes permisos para finalizar esta inspección');
+      throw new ForbiddenException('No tienes permisos para finalizar esta inspeccion');
     }
 
     // 2) Validar que tenga los 8 puntajes
     if (inspeccion.scores.length !== 8) {
       throw new BadRequestException(
-        `La inspección debe tener 8 puntajes. Actualmente tiene ${inspeccion.scores.length}`,
+        `La inspeccion debe tener 8 puntajes. Actualmente tiene ${inspeccion.scores.length}`,
       );
     }
 
@@ -209,7 +209,7 @@ export class InspeccionesService {
       scores: inspeccion.scores.map((s) => ({ value: s.value })),
     });
 
-    // 5) Actualizar la inspección con el resultado y la observación general
+    // 5) Actualizar la inspeccion con el resultado y la observacion general
     const inspeccionFinalizada = await this.prisma.inspection.update({
       where: { id: inspeccionId },
       data: {
@@ -264,7 +264,7 @@ export class InspeccionesService {
     });
 
     if (!inspeccion) {
-      throw new NotFoundException('Inspección no encontrada');
+      throw new NotFoundException('Inspeccion no encontrada');
     }
 
     return inspeccion;

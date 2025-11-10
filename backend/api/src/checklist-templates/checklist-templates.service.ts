@@ -25,7 +25,7 @@ export class ChecklistTemplatesService {
     return this.prisma.checklistTemplate.create({
       data: {
         name: dto.name,
-        active: false, // Por defecto inactiva hasta tener 8 ítems
+        active: false, // Por defecto inactiva hasta tener 8 items
       },
       include: { items: { orderBy: { ord: 'asc' } } },
     });
@@ -41,18 +41,18 @@ export class ChecklistTemplatesService {
       throw new NotFoundException('Plantilla no encontrada');
     }
 
-    // Verificar que no haya más de 8 ítems
+    // Verificar que no haya mas de 8 items
     if (template.items.length >= 8) {
-      throw new BadRequestException('La plantilla ya tiene 8 ítems (máximo permitido)');
+      throw new BadRequestException('La plantilla ya tiene 8 items (maximo permitido)');
     }
 
-    // Verificar que el orden no esté ocupado
+    // Verificar que el orden no este ocupado
     const ordenOcupado = template.items.some((item) => item.ord === dto.ord);
     if (ordenOcupado) {
-      throw new ConflictException(`El orden ${dto.ord} ya está ocupado en esta plantilla`);
+      throw new ConflictException(`El orden ${dto.ord} ya esta ocupado en esta plantilla`);
     }
 
-    // Crear el ítem
+    // Crear el item
     const item = await this.prisma.checklistItemDefinition.create({
       data: {
         templateId,
@@ -61,7 +61,7 @@ export class ChecklistTemplatesService {
       },
     });
 
-    // Si ahora tiene 8 ítems, se puede activar automáticamente
+    // Si ahora tiene 8 items, se puede activar automaticamente
     const itemsActualizados = await this.prisma.checklistItemDefinition.count({
       where: { templateId },
     });
@@ -120,14 +120,14 @@ export class ChecklistTemplatesService {
       throw new NotFoundException('Plantilla no encontrada');
     }
 
-    // Si se intenta activar, validar que tenga 8 ítems
+    // Si se intenta activar, validar que tenga 8 items
     if (dto.active === true && template.items.length !== 8) {
       throw new BadRequestException(
-        'No se puede activar una plantilla que no tenga exactamente 8 ítems',
+        'No se puede activar una plantilla que no tenga exactamente 8 items',
       );
     }
 
-    // Si se desactiva, verificar que no esté siendo usada en turnos futuros
+    // Si se desactiva, verificar que no este siendo usada en turnos futuros
     if (dto.active === false && template.active) {
       const turnosFuturos = await this.prisma.appointment.count({
         where: {
@@ -164,15 +164,15 @@ export class ChecklistTemplatesService {
       throw new NotFoundException('Plantilla no encontrada');
     }
 
-    // Verificar que el ítem existe y pertenece a la plantilla
+    // Verificar que el item existe y pertenece a la plantilla
     const item = await this.prisma.checklistItemDefinition.findFirst({
       where: { id: itemId, templateId },
     });
     if (!item) {
-      throw new NotFoundException('Ítem no encontrado en esta plantilla');
+      throw new NotFoundException('Item no encontrado en esta plantilla');
     }
 
-    // Si la plantilla está activa, desactivarla antes de eliminar
+    // Si la plantilla esta activa, desactivarla antes de eliminar
     if (template.active) {
       await this.prisma.checklistTemplate.update({
         where: { id: templateId },

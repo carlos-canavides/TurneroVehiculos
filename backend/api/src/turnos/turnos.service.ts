@@ -7,7 +7,7 @@ export class TurnosService {
   constructor(private prisma: PrismaService) {}
 
   async crear(userId: string, dto: CreateTurnoDto) {
-    // 1) Validar que el vehículo sea del usuario
+    // 1) Validar que el vehiculo sea del usuario
     const vehicle = await this.prisma.vehicle.findFirst({
       where: { id: dto.vehicleId, ownerId: userId },
     });
@@ -19,7 +19,7 @@ export class TurnosService {
       throw new BadRequestException('Fecha/hora inválida o en el pasado');
     }
 
-    // 3) Obtener checklist por defecto (el más reciente activo)
+    // 3) Obtener checklist por defecto (el mas reciente activo)
     const template = await this.prisma.checklistTemplate.findFirst({
       where: { active: true },
       orderBy: { createdAt: 'desc' },
@@ -124,11 +124,11 @@ export class TurnosService {
   }
 
   async turnosConfirmadosDisponibles() {
-    // Obtener turnos confirmados que no tienen inspección
+    // Obtener turnos confirmados que no tienen inspeccion
     return this.prisma.appointment.findMany({
       where: {
         state: 'CONFIRMED',
-        inspection: null, // No tiene inspección aún
+        inspection: null, // No tiene inspeccion aun
       },
       include: {
         vehicle: {
@@ -160,7 +160,7 @@ export class TurnosService {
   }
 
   async disponibilidad(fechaInicio?: string, fechaFin?: string) {
-    // Generar horarios disponibles para los próximos 30 días
+    // Generar horarios disponibles para los proximos 30 dias
     const hoy = new Date();
     const fechaFinDefault = new Date();
     fechaFinDefault.setDate(fechaFinDefault.getDate() + 30);
@@ -189,7 +189,7 @@ export class TurnosService {
     const fechaActual = new Date(inicio);
 
     while (fechaActual <= fin) {
-      const diaSemana = fechaActual.getDay(); // 0 = domingo, 6 = sábado
+      const diaSemana = fechaActual.getDay(); // 0 = domingo, 6 = sabado
       
       // Solo lunes a viernes (1-5)
       if (diaSemana >= 1 && diaSemana <= 5) {
@@ -197,7 +197,7 @@ export class TurnosService {
           const horario = new Date(fechaActual);
           horario.setHours(hora, 0, 0, 0);
           
-          // Verificar que no esté ocupado
+          // Verificar que no este ocupado
           const estaOcupado = turnosOcupados.some(
             (turno) => turno.dateTime.getTime() === horario.getTime(),
           );

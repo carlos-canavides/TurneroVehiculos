@@ -16,10 +16,10 @@ async function bootstrap() {
   
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-  // Configuración de Swagger/OpenAPI
+  // Configuracion de Swagger/OpenAPI
   const config = new DocumentBuilder()
-    .setTitle('Sistema de Gestión de Turnos e Inspección de Vehículos')
-    .setDescription('API para gestión de turnos, vehículos e inspecciones')
+    .setTitle('Sistema de Gestion de Turnos e Inspeccion de Vehiculos')
+    .setDescription('API para gestion de turnos, vehiculos e inspecciones')
     .setVersion('1.0')
     .addBearerAuth(
       {
@@ -30,7 +30,7 @@ async function bootstrap() {
         description: 'Ingresa el token JWT',
         in: 'header',
       },
-      'JWT-auth', // Este nombre se usará en los decoradores @ApiBearerAuth
+      'JWT-auth', // Este nombre se usara en los decoradores @ApiBearerAuth
     )
     .addTag('auth', 'Autenticación')
     .addTag('users', 'Usuarios')
@@ -43,7 +43,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document, {
     swaggerOptions: {
-      persistAuthorization: true, // Mantiene el token al recargar la página
+      persistAuthorization: true, // Mantiene el token al recargar la pagina
     },
     customSiteTitle: 'API - Sistema de Turnos e Inspecciones',
   });

@@ -1,98 +1,105 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Sistema de Gestion de Turnos e Inspeccion de Vehiculos - Backend API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API REST desarrollada con NestJS para la gestion de turnos de inspeccion vehicular.
+Permite a los duenos solicitar y confirmar turnos, y a los inspectores realizar inspecciones con checklist de 8 puntos
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Tecnologias Utilizadas
 
-## Description
+Framework: NestJS v11.0.1, TypeScript v5.7.3, Node.js
+Base de datos: PostgreSQL con Prisma ORM
+Autenticacion: JWT, Passport (local y JWT strategies)
+Validacion: class-validator, class-transformer
+Documentacion: Swagger/OpenAPI
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Arquitectura
 
-## Project setup
+Arquitectura orientada a servicios con separacion de responsabilidades:
+- Controllers: Manejan peticiones HTTP
+- Services: Logica de negocio
+- DTOs: Validacion de datos
+- Guards: Proteccion de rutas y permisos
+- Modules: AuthModule, UsersModule, VehiculosModule, TurnosModule, ChecklistTemplatesModule, InspeccionesModule, PrismaModule
 
-```bash
-$ npm install
-```
+Requerimientos Funcionales
 
-## Compile and run the project
+1. Solicitud de turno: POST /turnos
+2. Ingreso de matricula: Usuario registra vehiculo con patente (POST /vehiculos) antes de solicitar turno
+3. Disponibilidad de turnos: GET /turnos/disponibilidad genera horarios disponibles (9:00-17:00, lunes a viernes)
+4. Confirmacion: PATCH /turnos/:id/confirmar cambia estado de PENDING a CONFIRMED
+5. Inspeccion: POST /inspecciones y POST /inspecciones/:id/puntajes (solo INSPECTOR)
+6. Puntuacion 1-10: Validado con @Min(1) y @Max(10)
+7. Reglas de evaluacion: 
+    >= 80 puntos SAFE
+    < 40 puntos RECHECK, 
+    < 5 puntos en item RECHECK
+    Implementado en DefaultRuleEvaluator
+8. Checklist de 8 puntos: Validado en creacion y finalizacion de inspecciones
 
-```bash
-# development
-$ npm run start
+Base de Datos
+Modelos: User, Role, Vehicle, Appointment, ChecklistTemplate, ChecklistItemDefinition, Inspection, InspectionItemScore
+Estados: AppointmentState (PENDING, CONFIRMED, CANCELLED), InspectionResult (SAFE, RECHECK), RoleName (OWNER, INSPECTOR, ADMIN)
 
-# watch mode
-$ npm run start:dev
+Variables de Entorno
+Crear archivo .env en backend/api/:
 
-# production mode
-$ npm run start:prod
-```
 
-## Run tests
+# Instalacion
 
-```bash
-# unit tests
-$ npm run test
+1. Instalar dependencias:
+cd backend/api
+npm install
 
-# e2e tests
-$ npm run test:e2e
+2. Configurar base de datos:
+Crear base de datos PostgreSQL y configurar DATABASE_URL en .env
 
-# test coverage
-$ npm run test:cov
-```
+3. Ejecutar migraciones:
+npx prisma migrate deploy
 
-## Deployment
+4. Poblar datos iniciales:
+npx prisma db seed
+Crea roles, usuarios demo (owner@mail.com, inspector@mail.com, admin@mail.com con password demo123), plantilla de checklist y datos de ejemplo
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+5. Compilar:
+npm run build
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+6. Ejecutar:
+npm run start:dev (desarrollo)
+npm run start:prod (produccion)
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+# Deployment en Servidor
 
-## Resources
+1. Clonar y construir:
+git clone https://github.com/carlos-canavides/TurneroVehiculos.git
+cd backend/api
+npm install
+npm run build
 
-Check out a few resources that may come in handy when working with NestJS:
+2. Configurar base de datos:
+npx prisma migrate deploy
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+3. Iniciar aplicacion con PM2:
+npm install -g pm2
+pm2 start dist/main.js --name turnero-api
 
-## Support
+O directamente:
+npm run start:prod
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
 
-## Stay in touch
+# Documentacion API
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Swagger disponible en http://localhost:3000/api
 
-## License
+# Seguridad
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Contraseñas hasheadas con bcrypt
+Tokens JWT con expiracion configurable
+Rutas protegidas con guards de autenticacion y autorizacion
+Validacion de datos con class-validator
+CORS configurado para origenes especificos
+
+Justificacion de Tecnologias
+
+NestJS: Framework robusto, escalable, arquitectura modular, soporte TypeScript, integracion con herramientas modernas
+PostgreSQL: Base de datos relacional robusta, transacciones ACID, buen rendimiento, amplia adopcion
+Prisma ORM: Type-safety en compilacion, migraciones automaticas, cliente TypeScript generado, facilita desarrollo

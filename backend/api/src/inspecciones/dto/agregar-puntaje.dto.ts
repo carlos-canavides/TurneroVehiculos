@@ -21,11 +21,11 @@ export class AgregarPuntajeDto {
   valor: number; // 1-10
 
   @ApiPropertyOptional({
-    description: 'Observación opcional sobre el ítem',
+    description: 'Observacion opcional sobre el item',
     example: 'Buen estado general',
   })
   @IsOptional()
   @IsString()
-  nota?: string; // observación opcional
+  nota?: string; // observacion opcional
 }
 
