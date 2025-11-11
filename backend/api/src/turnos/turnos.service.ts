@@ -7,19 +7,19 @@ export class TurnosService {
   constructor(private prisma: PrismaService) {}
 
   async crear(userId: string, dto: CreateTurnoDto) {
-    // 1) Validar que el vehiculo sea del usuario
+    // Validar que el vehiculo sea del usuario
     const vehicle = await this.prisma.vehicle.findFirst({
       where: { id: dto.vehicleId, ownerId: userId },
     });
     if (!vehicle) throw new ForbiddenException('El vehículo no te pertenece');
 
-    // 2) Validar fecha futura
+    // Validar fecha futura
     const when = new Date(dto.scheduledAt);
     if (isNaN(when.getTime()) || when < new Date()) {
       throw new BadRequestException('Fecha/hora inválida o en el pasado');
     }
 
-    // 3) Obtener checklist por defecto (el mas reciente activo)
+    // Obtener checklist por defecto (el mas reciente activo)
     const template = await this.prisma.checklistTemplate.findFirst({
       where: { active: true },
       orderBy: { createdAt: 'desc' },

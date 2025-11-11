@@ -69,6 +69,12 @@ export class InspeccionesService {
       },
     });
 
+    // Actualizar el inspectorId en el Appointment cuando se crea la inspeccion
+    await this.prisma.appointment.update({
+      where: { id: dto.turnoId },
+      data: { inspectorId },
+    });
+
     return inspeccion;
   }
 
@@ -108,7 +114,7 @@ export class InspeccionesService {
       throw new NotFoundException('El item no pertenece a la plantilla de este turno');
     }
 
-    // 3) Verificar si ya existe un puntaje para este item (actualizar o crear)
+    // Verificar si ya existe un puntaje para este item (actualizar o crear)
     const puntajeExistente = inspeccion.scores.find((score) => score.itemId === dto.itemId);
 
     if (puntajeExistente) {
@@ -168,7 +174,7 @@ export class InspeccionesService {
     inspeccionId: string,
     dto: FinalizarInspeccionDto,
   ) {
-    // 1) Validar que la inspeccion existe y pertenece al inspector
+    // Validar que la inspeccion existe y pertenece al inspector
     const inspeccion = await this.prisma.inspection.findUnique({
       where: { id: inspeccionId },
       include: {
@@ -193,23 +199,23 @@ export class InspeccionesService {
       throw new ForbiddenException('No tienes permisos para finalizar esta inspeccion');
     }
 
-    // 2) Validar que tenga los 8 puntajes
+    // Validar que tenga los 8 puntajes
     if (inspeccion.scores.length !== 8) {
       throw new BadRequestException(
         `La inspeccion debe tener 8 puntajes. Actualmente tiene ${inspeccion.scores.length}`,
       );
     }
 
-    // 3) Recalcular total (por si acaso)
+    // Recalcular total (por si acaso)
     const total = await this.calcularTotal(inspeccionId);
 
-    // 4) Evaluar resultado usando el RuleEvaluator
+    // Evaluar resultado usando el RuleEvaluator
     const resultado = this.ruleEvaluator.evaluar({
       total,
       scores: inspeccion.scores.map((s) => ({ value: s.value })),
     });
 
-    // 5) Actualizar la inspeccion con el resultado y la observacion general
+    // Actualizar la inspeccion con el resultado y la observacion general
     const inspeccionFinalizada = await this.prisma.inspection.update({
       where: { id: inspeccionId },
       data: {

@@ -195,43 +195,59 @@ export default function OwnerDashboard() {
 
           {showNewAppointment && (
             <form onSubmit={handleCreateAppointment} className="new-appointment-form">
-              <div className="form-group">
-                <label>Seleccionar Vehículo:</label>
-                <select
-                  value={selectedVehicle}
-                  onChange={(e) => setSelectedVehicle(e.target.value)}
-                  required
-                >
-                  <option value="">-- Selecciona un vehículo --</option>
-                  {vehicles.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.plate} {v.alias && `(${v.alias})`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {availableSlots.length > 0 && (
-                <div className="form-group">
-                  <label>Horarios Disponibles:</label>
-                  <select
-                    value={selectedSlot}
-                    onChange={(e) => setSelectedSlot(e.target.value)}
-                    required
-                  >
-                    <option value="">-- Selecciona un horario --</option>
-                    {availableSlots.map((slot) => (
-                      <option key={slot} value={slot}>
-                        {new Date(slot).toLocaleString('es-AR')}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              {vehicles.length === 0 ? (
+                <p style={{ color: '#dc3545', padding: '10px' }}>
+                  Debes tener al menos un vehículo registrado para solicitar un turno.
+                </p>
+              ) : (
+                <>
+                  <div className="form-group">
+                    <label>Seleccionar Vehículo:</label>
+                    <select
+                      value={selectedVehicle}
+                      onChange={(e) => setSelectedVehicle(e.target.value)}
+                      required
+                    >
+                      <option value="">-- Selecciona un vehículo --</option>
+                      {vehicles.map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.plate} {v.alias && `(${v.alias})`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </>
               )}
 
-              <button type="submit" disabled={!selectedVehicle || !selectedSlot}>
-                Solicitar Turno
-              </button>
+              {vehicles.length > 0 && (
+                <>
+                  {availableSlots.length > 0 ? (
+                    <div className="form-group">
+                      <label>Horarios Disponibles:</label>
+                      <select
+                        value={selectedSlot}
+                        onChange={(e) => setSelectedSlot(e.target.value)}
+                        required
+                      >
+                        <option value="">-- Selecciona un horario --</option>
+                        {availableSlots.map((slot) => (
+                          <option key={slot} value={slot}>
+                            {new Date(slot).toLocaleString('es-AR')}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : (
+                    <p style={{ color: '#666', padding: '10px' }}>
+                      Cargando horarios disponibles...
+                    </p>
+                  )}
+
+                  <button type="submit" disabled={!selectedVehicle || !selectedSlot || availableSlots.length === 0}>
+                    Solicitar Turno
+                  </button>
+                </>
+              )}
             </form>
           )}
 
@@ -262,7 +278,7 @@ export default function OwnerDashboard() {
                         <h4>Resultado de Inspección:</h4>
                         <p>Total: {appt.inspection.total} puntos</p>
                         <p className={`result result-${appt.inspection.result.toLowerCase()}`}>
-                          {appt.inspection.result === 'SAFE' ? '✅ Seguro' : '⚠️ Rechequear'}
+                          {appt.inspection.result === 'SAFE' ? 'Seguro' : 'Rechequear'}
                         </p>
                         {appt.inspection.note && (
                           <p className="inspection-note">Observación: {appt.inspection.note}</p>

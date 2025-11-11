@@ -26,19 +26,22 @@ import type { StringValue } from 'ms';
           if (typeof raw === 'number') {
             // Si es numero, validar minimo 1 hora (3600 segundos)
             expiresIn = raw >= 3600 ? raw : 3600;
-          } else if (typeof raw === 'string') {
+          } 
+          else if (typeof raw === 'string') {
             // Si es string, verificar si es un numero puro o tiene formato (1h, 3600s, etc.)
             const parsed = parseInt(raw);
             if (!isNaN(parsed) && raw === parsed.toString()) {
               // Es un numero puro como string (ej: "3600")
               // Convertir a numero o agregar "s" para formato de tiempo
               expiresIn = parsed >= 3600 ? parsed : 3600;
-            } else {
+            } 
+            else {
               // Tiene formato de tiempo (ej: "1h", "3600s", "24h")
               // Validar que no sea muy corto
               if (!isNaN(parsed) && parsed < 3600) {
                 expiresIn = '1h'; // Minimo 1 hora
-              } else {
+              } 
+              else {
                 expiresIn = raw as StringValue;
               }
             }

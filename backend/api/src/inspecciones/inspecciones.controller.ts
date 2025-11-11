@@ -58,14 +58,6 @@ export class InspeccionesController {
     return this.service.finalizar(req.user.userId, id, dto);
   }
 
-  @ApiOperation({ summary: 'Obtener inspección por ID' })
-  @ApiResponse({ status: 200, description: 'Inspección encontrada' })
-  @ApiResponse({ status: 404, description: 'Inspección no encontrada' })
-  @Get(':id')
-  obtenerPorId(@Param('id') id: string) {
-    return this.service.obtenerPorId(id);
-  }
-
   @ApiOperation({ summary: 'Listar mis inspecciones (solo INSPECTOR)' })
   @ApiResponse({ status: 200, description: 'Lista de inspecciones del inspector' })
   @Get('mias')
@@ -73,6 +65,15 @@ export class InspeccionesController {
   @Roles('INSPECTOR')
   misInspecciones(@Req() req: any) {
     return this.service.listarPorInspector(req.user.userId);
+  }
+
+  @ApiOperation({ summary: 'Obtener todas las inspecciones (solo ADMIN)' })
+  @ApiResponse({ status: 200, description: 'Lista de todas las inspecciones' })
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  @Get('todas')
+  todasLasInspecciones() {
+    return this.service.todasLasInspecciones();
   }
 
   @ApiOperation({ summary: 'Obtener inspección por turno' })
@@ -83,11 +84,12 @@ export class InspeccionesController {
     return this.service.listarPorTurno(turnoId);
   }
 
-  @ApiOperation({ summary: 'Obtener todas las inspecciones (solo ADMIN)' })
-  @ApiResponse({ status: 200, description: 'Lista de todas las inspecciones' })
-  @Get('todas')
-  todasLasInspecciones() {
-    return this.service.todasLasInspecciones();
+  @ApiOperation({ summary: 'Obtener inspección por ID' })
+  @ApiResponse({ status: 200, description: 'Inspección encontrada' })
+  @ApiResponse({ status: 404, description: 'Inspección no encontrada' })
+  @Get(':id')
+  obtenerPorId(@Param('id') id: string) {
+    return this.service.obtenerPorId(id);
   }
 }
 

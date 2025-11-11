@@ -15,6 +15,7 @@
 .dashboard-header h1 {
   margin: 0;
   color: #333;
+  font-size: 24px;
 }
 
 .user-info {
@@ -70,6 +71,8 @@
   border: none;
   border-radius: 5px;
   cursor: pointer;
+  white-space: nowrap;
+  width: auto;
 }
 
 .new-vehicle-form {

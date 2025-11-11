@@ -1,6 +1,8 @@
 import { Body, Controller, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 import { TurnosService } from './turnos.service';
 import { CreateTurnoDto } from './dto/create-turno.dto';
 import { CancelarTurnoDto } from './dto/cancelar-turno.dto';
@@ -59,6 +61,8 @@ export class TurnosController {
 
   @ApiOperation({ summary: 'Obtener todos los turnos (solo ADMIN)' })
   @ApiResponse({ status: 200, description: 'Lista de todos los turnos' })
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
   @Get('todos')
   todosLosTurnos() {
     return this.service.todosLosTurnos();
