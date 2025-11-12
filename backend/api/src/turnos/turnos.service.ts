@@ -71,7 +71,16 @@ export class TurnosService {
     return this.prisma.appointment.findMany({
       where: { requesterId: userId },
       orderBy: { dateTime: 'desc' },
-      include: { vehicle: true },
+      include: {
+        vehicle: true,
+        inspection: {
+          select: {
+            id: true,
+            total: true,
+            result: true,
+          },
+        },
+      },
     });
   }
 

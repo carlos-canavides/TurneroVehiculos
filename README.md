@@ -17,9 +17,9 @@ Durante este proceso:
 ## Verificar que Todo Esté Corriendo
 
 En **Docker Desktop** verificar los 3 contenedores corriendo:
-- `turnero_postgres`
-- `turnero_backend`
-- `turnero_frontend`
+- turnero_postgres
+- turnero_backend
+- turnero_frontend
 
 ## Acceder 
 Una vez que todo esté corriendo:
@@ -37,13 +37,13 @@ O desde Docker Desktop: seleccionar los 3 contenedores y hacer clic en Stop.
 ## 👤 Usuarios de Prueba (del Seed)
 El seed crea automáticamente estos usuarios:
 - **Admin**: 
-  - Email: `admin@mail.com`
-  - Password: `demo123`
+  - Email: admin@mail.com
+  - Password: demo123
 
 - **Owner (Dueño)**: 
-  - Email: `owner@mail.com`
-  - Password: `demo123`
+  - Email: owner@mail.com
+  - Password: demo123
 
 - **Inspector**: 
-  - Email: `inspector@mail.com`
-  - Password: `demo123`
+  - Email: inspector@mail.com
+  - Password: demo123
