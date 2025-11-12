@@ -225,13 +225,19 @@
 }
 
 .result-safe {
-  background: #28a745;
-  color: white;
+  background: transparent;
+  color: #333;
+  border: 1px solid #ddd;
 }
 
 .result-recheck {
   background: #ffc107;
   color: #000;
+}
+
+.result-revisando {
+  background: #17a2b8 !important;
+  color: white !important;
 }
 
 .inspection-note {

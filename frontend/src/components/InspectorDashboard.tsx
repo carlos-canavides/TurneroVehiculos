@@ -1,17 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { turnosApi } from '../api/turnos';
+import { turnosApi, type Appointment } from '../api/turnos';
 import { inspeccionesApi } from '../api/inspecciones';
 import './InspectorDashboard.css';
 
-interface AvailableAppointment {
-  id: string;
-  dateTime: string;
-  vehicle: {
-    plate: string;
-    alias?: string;
-  };
+interface AvailableAppointment extends Appointment {
   requester: {
+    id: string;
     name: string;
     email: string;
   };
@@ -43,6 +38,7 @@ interface Inspection {
 
 interface ActiveInspection {
   id: string;
+  total: number;
   appointment: AvailableAppointment;
   items: Array<{
     id: string;
@@ -71,8 +67,58 @@ export default function InspectorDashboard() {
         turnosApi.getConfirmedAvailable(),
         inspeccionesApi.getMyInspections(),
       ]);
-      setAvailableAppointments(appointmentsData);
-      setInspections(inspectionsData);
+      setAvailableAppointments(appointmentsData as AvailableAppointment[]);
+      
+      // Separar inspecciones finalizadas de las no finalizadas
+      const finalizadas = inspectionsData.filter((insp) => {
+        // Una inspección está finalizada si tiene note (observación general) y 8 scores
+        return insp.note && insp.scores && insp.scores.length === 8;
+      });
+      const noFinalizadas = inspectionsData.filter((insp) => {
+        return !insp.note || !insp.scores || insp.scores.length < 8;
+      });
+      
+      setInspections(finalizadas);
+      
+      // Si hay una inspección no finalizada, cargarla automáticamente
+      if (noFinalizadas.length > 0) {
+        const inspection = noFinalizadas[0]; // Tomar la primera no finalizada
+        // Obtener los detalles completos de la inspección
+        const fullInspection = await inspeccionesApi.getInspectionById(inspection.id);
+        
+        if (fullInspection && fullInspection.appointment.template) {
+          // Mapear los items de la template con los scores existentes
+          const itemsWithScores = fullInspection.appointment.template.items.map((item: any) => {
+            const existingScore = fullInspection.scores?.find((s: any) => s.itemId === item.id);
+            return {
+              id: item.id,
+              label: item.label,
+              ord: item.ord,
+              score: existingScore?.value,
+              note: existingScore?.note,
+            };
+          });
+          
+          setActiveInspection({
+            id: fullInspection.id,
+            total: fullInspection.total || 0,
+            appointment: {
+              id: fullInspection.appointment.id,
+              dateTime: fullInspection.appointment.dateTime,
+              vehicle: fullInspection.appointment.vehicle,
+              requester: fullInspection.appointment.requester || {
+                id: '',
+                name: 'N/A',
+                email: 'N/A',
+              },
+              template: {
+                items: fullInspection.appointment.template.items,
+              },
+            } as AvailableAppointment,
+            items: itemsWithScores,
+          });
+        }
+      }
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -85,6 +131,7 @@ export default function InspectorDashboard() {
       const inspection = await inspeccionesApi.createInspection(appointment.id);
       setActiveInspection({
         id: inspection.id,
+        total: inspection.total || 0,
         appointment,
         items: appointment.template.items.map((item) => ({
           id: item.id,
@@ -104,13 +151,30 @@ export default function InspectorDashboard() {
     try {
       await inspeccionesApi.addScore(activeInspection.id, itemId, value, note);
       
-      // Actualizar el estado local
-      setActiveInspection({
-        ...activeInspection,
-        items: activeInspection.items.map((item) =>
-          item.id === itemId ? { ...item, score: value, note } : item
-        ),
-      });
+      // Recargar la inspección para obtener el total actualizado
+      const updatedInspection = await inspeccionesApi.getInspectionById(activeInspection.id);
+      
+      if (updatedInspection && updatedInspection.appointment.template) {
+        // Mapear los items de la template con los scores existentes
+        const itemsWithScores = updatedInspection.appointment.template.items.map((item: any) => {
+          const existingScore = updatedInspection.scores?.find((s: any) => s.itemId === item.id);
+          return {
+            id: item.id,
+            label: item.label,
+            ord: item.ord,
+            score: existingScore?.value,
+            note: existingScore?.note,
+          };
+        });
+        
+        // Actualizar el estado local con los datos actualizados
+        setActiveInspection({
+          id: updatedInspection.id,
+          total: updatedInspection.total || 0,
+          appointment: activeInspection.appointment,
+          items: itemsWithScores,
+        });
+      }
     } catch (error: any) {
       alert(error.response?.data?.message || 'Error al agregar puntaje');
     }
@@ -160,7 +224,8 @@ export default function InspectorDashboard() {
             <div className="inspection-info">
               <h3>Vehículo: {activeInspection.appointment.vehicle.plate}</h3>
               <p>Fecha: {new Date(activeInspection.appointment.dateTime).toLocaleString('es-AR')}</p>
-              <p>Dueño: {activeInspection.appointment.requester.name}</p>
+              <p>Dueño: {activeInspection.appointment.requester?.name || 'N/A'}</p>
+              <p><strong>Total acumulado: {activeInspection.total} puntos</strong></p>
             </div>
 
             <div className="items-list">
@@ -227,7 +292,7 @@ export default function InspectorDashboard() {
                       <div className="appointment-info">
                         <h3>Vehículo: {appt.vehicle.plate}</h3>
                         <p>Fecha: {new Date(appt.dateTime).toLocaleString('es-AR')}</p>
-                        <p>Dueño: {appt.requester.name} ({appt.requester.email})</p>
+                        <p>Dueño: {appt.requester?.name || 'N/A'} ({appt.requester?.email || 'N/A'})</p>
                         <button
                           onClick={() => handleStartInspection(appt)}
                           className="start-inspection-btn"

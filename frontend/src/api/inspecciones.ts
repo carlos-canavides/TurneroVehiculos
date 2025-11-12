@@ -5,11 +5,35 @@ export interface Inspection {
   total: number;
   result: string;
   note?: string;
+  scores?: Array<{
+    id: string;
+    value: number;
+    itemId: string;
+    note?: string;
+    item?: {
+      id: string;
+      label: string;
+      ord: number;
+    };
+  }>;
   appointment: {
+    id: string;
     vehicle: {
       plate: string;
     };
     dateTime: string;
+    requester?: {
+      id: string;
+      name: string;
+      email: string;
+    };
+    template?: {
+      items: Array<{
+        id: string;
+        label: string;
+        ord: number;
+      }>;
+    };
   };
 }
 

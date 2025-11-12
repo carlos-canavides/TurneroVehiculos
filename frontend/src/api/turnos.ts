@@ -8,6 +8,26 @@ export interface Appointment {
     id: string;
     plate: string;
     alias?: string;
+    owner?: {
+      id: string;
+      name: string;
+      email: string;
+    };
+  };
+  requester?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  inspector?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  inspection?: {
+    id: string;
+    total: number;
+    result: string;
   };
 }
 

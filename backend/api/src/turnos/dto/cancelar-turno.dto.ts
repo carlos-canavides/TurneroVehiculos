@@ -1,5 +1,12 @@
 import { IsOptional, IsString } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CancelarTurnoDto {
-  @IsOptional() @IsString() motivo?: string;
+  @ApiPropertyOptional({
+    description: 'Motivo de cancelación del turno',
+    example: 'Cambio de planes',
+  })
+  @IsOptional()
+  @IsString()
+  motivo?: string;
 }

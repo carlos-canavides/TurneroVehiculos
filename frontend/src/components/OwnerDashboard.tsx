@@ -21,6 +21,7 @@ interface Appointment {
     total: number;
     result: string;
     note?: string;
+    scores?: Array<{ id: string; value: number }>;
   };
 }
 
@@ -285,18 +286,28 @@ export default function OwnerDashboard() {
                       </button>
                     )}
 
-                    {appt.inspection && (
-                      <div className="inspection-result">
-                        <h4>Resultado de Inspección:</h4>
-                        <p>Total: {appt.inspection.total} puntos</p>
-                        <p className={`result result-${appt.inspection.result.toLowerCase()}`}>
-                          {appt.inspection.result === 'SAFE' ? 'Seguro' : 'Rechequear'}
-                        </p>
-                        {appt.inspection.note && (
-                          <p className="inspection-note">Observación: {appt.inspection.note}</p>
-                        )}
-                      </div>
-                    )}
+                    {appt.inspection && (() => {
+                      // Determinar si la inspección está finalizada
+                      // Está finalizada si tiene 8 puntajes Y tiene una observación general (note)
+                      const isFinalizada = appt.inspection.scores && appt.inspection.scores.length === 8 && appt.inspection.note;
+                      
+                      return (
+                        <div className="inspection-result">
+                          <h4>Resultado de Inspección:</h4>
+                          <p>Total: {appt.inspection.total} puntos</p>
+                          {isFinalizada ? (
+                            <p className={`result result-${appt.inspection.result.toLowerCase()}`}>
+                              {appt.inspection.result === 'SAFE' ? 'Seguro' : 'Rechequear'}
+                            </p>
+                          ) : (
+                            <p className="result result-revisando">Revisando...</p>
+                          )}
+                          {appt.inspection.note && (
+                            <p className="inspection-note">Observación: {appt.inspection.note}</p>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               ))

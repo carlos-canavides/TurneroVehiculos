@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { turnosApi } from '../api/turnos';
+import { turnosApi, type Appointment } from '../api/turnos';
 import { inspeccionesApi } from '../api/inspecciones';
-import { vehiculosApi } from '../api/vehiculos';
+import { vehiculosApi, type Vehicle } from '../api/vehiculos';
 import { usersApi } from '../api/users';
 import { authApi } from '../api/auth';
 import './AdminDashboard.css';
@@ -38,32 +38,24 @@ const formatDateTime = (dateTimeString: string): string => {
   }
 };
 
-interface Appointment {
-  id: string;
-  dateTime: string;
-  state: string;
+// Usar las interfaces de la API
+type AdminAppointment = Appointment & {
   vehicle: {
+    id: string;
     plate: string;
     alias?: string;
     owner: {
+      id: string;
       name: string;
       email: string;
     };
   };
   requester: {
-    name: string;
-    email: string;
-  };
-  inspector?: {
-    name: string;
-    email: string;
-  };
-  inspection?: {
     id: string;
-    total: number;
-    result: string;
+    name: string;
+    email: string;
   };
-}
+};
 
 interface Inspection {
   id: string;
@@ -86,15 +78,13 @@ interface Inspection {
   };
 }
 
-interface Vehicle {
-  id: string;
-  plate: string;
-  alias?: string;
+type AdminVehicle = Vehicle & {
   owner: {
+    id: string;
     name: string;
     email: string;
   };
-}
+};
 
 interface User {
   id: string;
@@ -112,9 +102,9 @@ interface User {
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [appointments, setAppointments] = useState<AdminAppointment[]>([]);
   const [inspections, setInspections] = useState<Inspection[]>([]);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [vehicles, setVehicles] = useState<AdminVehicle[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'turnos' | 'inspecciones' | 'vehiculos' | 'usuarios'>('turnos');
@@ -136,9 +126,9 @@ export default function AdminDashboard() {
         vehiculosApi.getAllVehicles(),
         usersApi.getAllUsers(),
       ]);
-      setAppointments(appointmentsData);
+      setAppointments(appointmentsData as AdminAppointment[]);
       setInspections(inspectionsData);
-      setVehicles(vehiclesData);
+      setVehicles(vehiclesData as AdminVehicle[]);
       setUsers(usersData);
     } catch (error) {
       console.error('Error loading data:', error);

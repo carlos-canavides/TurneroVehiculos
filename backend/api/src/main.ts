@@ -7,8 +7,19 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
   // Configurar CORS para permitir peticiones desde el frontend
+  const allowedOrigins = process.env.CORS_ORIGINS 
+    ? process.env.CORS_ORIGINS.split(',') 
+    : [
+        'http://localhost:5173', 
+        'http://localhost:3000', 
+        'http://localhost:80',
+        'http://localhost',
+        'http://127.0.0.1:80',
+        'http://127.0.0.1',
+      ];
+  
   app.enableCors({
-    origin: ['http://localhost:5173', 'http://localhost:3000'], // Frontend y Swagger
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

@@ -4,6 +4,11 @@ export interface Vehicle {
   id: string;
   plate: string;
   alias?: string;
+  owner?: {
+    id: string;
+    name: string;
+    email: string;
+  };
 }
 
 export const vehiculosApi = {
