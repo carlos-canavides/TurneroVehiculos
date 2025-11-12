@@ -1,19 +1,11 @@
 # Sistema de Gestion de Turnos e Inspeccion de Vehiculos
 
-## Instrucciones para Levantar el Proyecto con Docker
-
-### Requisitos
-- Docker Desktop instalado y corriendo
-- Git (para clonar el repositorio)
-
 ### Levantar Todo con Docker Compose
 Abre una terminal en la carpeta del proyecto y ejecutar:
 
 ```bash
 docker compose up --build
 ```
-
-**Nota:** No necesitas crear archivos `.env`. El proyecto funciona con valores por defecto.
 
 ## Esperar a que todo este listo
 Durante este proceso:
