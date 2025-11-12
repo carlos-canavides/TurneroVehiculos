@@ -18,4 +18,19 @@ export class UsersService {
       include: { roles: { include: { role: true } } },
     });
   }
+
+  findAll() {
+    return this.prisma.user.findMany({
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
 }

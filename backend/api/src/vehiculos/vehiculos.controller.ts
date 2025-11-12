@@ -59,6 +59,7 @@ export class VehiculosController {
 
   @ApiOperation({ summary: 'Eliminar un vehículo' })
   @ApiResponse({ status: 200, description: 'Vehículo eliminado' })
+  @ApiResponse({ status: 400, description: 'No se puede eliminar porque tiene turnos activos' })
   @ApiResponse({ status: 404, description: 'Vehículo no encontrado' })
   @Delete(':id')
   async eliminar(@Param('id') id: string, @Req() req: any) {

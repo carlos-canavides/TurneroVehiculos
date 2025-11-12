@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -42,6 +42,24 @@ export class VehiculosService {
 
   async eliminarPropio(id: string, ownerId: string) {
     const v = await this.obtenerPropio(id, ownerId);
+    
+    // Verificar si tiene turnos asociados
+    const turnos = await this.prisma.appointment.findMany({
+      where: { vehicleId: v.id },
+      select: { id: true, state: true, dateTime: true },
+    });
+
+    if (turnos.length > 0) {
+      const turnosActivos = turnos.filter(t => t.state !== 'CANCELLED');
+      if (turnosActivos.length > 0) {
+        throw new BadRequestException(
+          `No se puede eliminar el vehículo porque tiene ${turnosActivos.length} turno(s) activo(s). ` +
+          `Debes cancelar todos los turnos antes de eliminar el vehículo.`
+        );
+      }
+      // Si todos los turnos están cancelados, permitir eliminar
+    }
+
     await this.prisma.vehicle.delete({ where: { id: v.id } });
     return { ok: true };
   }

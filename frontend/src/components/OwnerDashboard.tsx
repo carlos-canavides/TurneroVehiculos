@@ -24,6 +24,18 @@ interface Appointment {
   };
 }
 
+// Función helper para formatear fecha/hora desde el formato del backend
+const formatDateTime = (dateTimeString: string): string => {
+  // El formato que viene es YYYY-MM-DDTHH:mm:ss
+  // Lo parseamos manualmente para evitar problemas de zona horaria
+  const [datePart, timePart] = dateTimeString.split('T');
+  const [year, month, day] = datePart.split('-');
+  const [hours, minutes] = timePart.split(':');
+  
+  // Formatear como DD/MM/YYYY HH:mm
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
+};
+
 export default function OwnerDashboard() {
   const { user, logout } = useAuth();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -232,7 +244,7 @@ export default function OwnerDashboard() {
                         <option value="">-- Selecciona un horario --</option>
                         {availableSlots.map((slot) => (
                           <option key={slot} value={slot}>
-                            {new Date(slot).toLocaleString('es-AR')}
+                            {formatDateTime(slot)}
                           </option>
                         ))}
                       </select>

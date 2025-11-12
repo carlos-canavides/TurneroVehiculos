@@ -6,6 +6,31 @@ import { CreateTurnoDto } from './dto/create-turno.dto';
 export class TurnosService {
   constructor(private prisma: PrismaService) {}
 
+  // Validar que el horario esté en el rango permitido (9-17) y sea hora redonda
+  private validarHorario(fecha: Date): boolean {
+    const hora = fecha.getHours();
+    const minutos = fecha.getMinutes();
+    const segundos = fecha.getSeconds();
+    const diaSemana = fecha.getDay();
+
+    // Debe ser lunes a viernes (1-5)
+    if (diaSemana < 1 || diaSemana > 5) {
+      return false;
+    }
+
+    // Debe ser entre 9 y 17
+    if (hora < 9 || hora > 17) {
+      return false;
+    }
+
+    // Debe ser hora redonda (minutos y segundos en 0)
+    if (minutos !== 0 || segundos !== 0) {
+      return false;
+    }
+
+    return true;
+  }
+
   async crear(userId: string, dto: CreateTurnoDto) {
     // Validar que el vehiculo sea del usuario
     const vehicle = await this.prisma.vehicle.findFirst({
@@ -17,6 +42,11 @@ export class TurnosService {
     const when = new Date(dto.scheduledAt);
     if (isNaN(when.getTime()) || when < new Date()) {
       throw new BadRequestException('Fecha/hora inválida o en el pasado');
+    }
+
+    // Validar horario permitido (9-17, hora redonda, lunes a viernes)
+    if (!this.validarHorario(when)) {
+      throw new BadRequestException('Horario inválido, 9 a 17 con horario redondo');
     }
 
     // Obtener checklist por defecto (el mas reciente activo)
@@ -184,9 +214,11 @@ export class TurnosService {
       },
     });
 
-    // Generar horarios disponibles (cada hora, de 9:00 a 17:00, lunes a viernes)
+    // Generar horarios disponibles (cada hora, de 9:00 a 17:00 hora local, lunes a viernes)
     const horariosDisponibles: Date[] = [];
     const fechaActual = new Date(inicio);
+    // Resetear a medianoche hora local para empezar desde el inicio del día
+    fechaActual.setHours(0, 0, 0, 0);
 
     while (fechaActual <= fin) {
       const diaSemana = fechaActual.getDay(); // 0 = domingo, 6 = sabado
@@ -197,22 +229,39 @@ export class TurnosService {
           const horario = new Date(fechaActual);
           horario.setHours(hora, 0, 0, 0);
           
-          // Verificar que no este ocupado
-          const estaOcupado = turnosOcupados.some(
-            (turno) => turno.dateTime.getTime() === horario.getTime(),
-          );
+          // Verificar que no este ocupado (comparar fecha y hora, ignorando milisegundos)
+          const estaOcupado = turnosOcupados.some((turno) => {
+            const turnoDate = new Date(turno.dateTime);
+            return (
+              turnoDate.getFullYear() === horario.getFullYear() &&
+              turnoDate.getMonth() === horario.getMonth() &&
+              turnoDate.getDate() === horario.getDate() &&
+              turnoDate.getHours() === horario.getHours()
+            );
+          });
           
+          // Solo agregar si no está ocupado y es una fecha futura
           if (!estaOcupado && horario >= hoy) {
             horariosDisponibles.push(horario);
           }
         }
       }
       
+      // Avanzar al siguiente día
       fechaActual.setDate(fechaActual.getDate() + 1);
     }
 
     return {
-      horariosDisponibles: horariosDisponibles.map((h) => h.toISOString()),
+      horariosDisponibles: horariosDisponibles.map((h) => {
+        // Formatear como YYYY-MM-DDTHH:mm:ss (sin zona horaria, asumiendo hora local)
+        const year = h.getFullYear();
+        const month = String(h.getMonth() + 1).padStart(2, '0');
+        const day = String(h.getDate()).padStart(2, '0');
+        const hours = String(h.getHours()).padStart(2, '0');
+        const minutes = String(h.getMinutes()).padStart(2, '0');
+        const seconds = String(h.getSeconds()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+      }),
       total: horariosDisponibles.length,
     };
   }

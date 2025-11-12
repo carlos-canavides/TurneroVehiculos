@@ -254,7 +254,7 @@ export default function InspectorDashboard() {
                         <p>Fecha: {new Date(inspection.appointment.dateTime).toLocaleString('es-AR')}</p>
                         <p>Total: {inspection.total} puntos</p>
                         <span className={`result result-${inspection.result.toLowerCase()}`}>
-                          {inspection.result === 'SAFE' ? '✅ Seguro' : '⚠️ Rechequear'}
+                          {inspection.result === 'SAFE' ? 'Seguro' : 'Rechequear'}
                         </span>
                       </div>
                     </div>

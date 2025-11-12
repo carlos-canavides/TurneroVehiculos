@@ -16,7 +16,7 @@ export class TurnosController {
 
   @ApiOperation({ summary: 'Crear un nuevo turno' })
   @ApiResponse({ status: 201, description: 'Turno creado exitosamente' })
-  @ApiResponse({ status: 400, description: 'Fecha inválida o vehículo no pertenece al usuario' })
+  @ApiResponse({ status: 400, description: 'Fecha inválida, horario fuera de rango (9-17), o vehículo no pertenece al usuario' })
   @Post()
   create(@Req() req: any, @Body() dto: CreateTurnoDto) {
     return this.service.crear(req.user.userId, dto);
